@@ -29,13 +29,14 @@ char *exchangearray(char A[], int m,int n, int arraysize);//2.8中的交换
 bool findxinseq(Seqlist &L, int x);//在递增有序顺序表中找到值为x的元素 2.9
 char *moveleftp(char A[], int p ,int n);//将一维数组中的数据左移p 2.10
 int findmidnumber(int A[], int B[], int n);//找出两个等长升序数列的中位数 2.11
+int majornumber(int A[],int n);//找出出现次数超过一半的元素 2.12
 
 
 int main()
 {
 Seqlist L;
 //Seqlist M,N//
-//2.8交换数组中两个顺序表位置的测试
+/*2.8交换数组中两个顺序表位置的测试
 char A[]={'a','a','a','a','d','b','b','b','c'};
 char *B=moveleftp(A, 2, 9);
     for (int i=0;i<9;i++)
@@ -44,8 +45,17 @@ char *B=moveleftp(A, 2, 9);
     }
     cout<<endl;
     delete []B;
-//
+*/
 L.length=0;//初始化线性表的长度为0
+/* 2.11题的测试数据
+int A[]={1,3,4,5,6};
+int B[]={2,5,7,8,10};
+cout<<findmidnumber(A, B, 5)<<endl;
+*/
+/* 2.12题的测试数据
+int A[]={1,2,1,1,4,1,1,1,2,3,1,1,2,3,2};
+cout<<majornumber(A, 14)<<endl;
+*/
 creat(L);
 cout<<"改变前的元素为："<<endl;
 show(L);
@@ -359,3 +369,40 @@ int findmidnumber(int A[], int B[], int n)
     }
     return A[Aleft]<B[Bleft]?A[Aleft]:B[Bleft];//这个千万不能取成中位数，因为他是在循环的才开始更新，所以应该取left或right的位置
 }
+
+//找出出现次数超过一半的主元素 2.12
+int majornumber(int A[],int n)
+{
+    int count=0,temp=A[0];
+    //用计数的方法时间复杂度在2n，即位O(n),空间复杂度为O(1)，因为只用了temp和count这两个内存空间，也可以通过排序后直接输出中间元素，然后数一遍有没有超过一半（实现简单，时间复杂度更高）
+    for(int i=0;i<n;i++)
+    //本质上是抽屉原理，即用一个计数器计数1，0，到-1就换上temp重新计数。即用一半的抽屉来装元素，如果元素超过一半，那么肯定有一个抽屉有两个元素，那么这个计数器就不会为-1，temp也不会装不为超过一半的元素。
+    {
+        if(A[i]==temp)
+            count++;
+        else
+        {
+            count--;
+            if(count==-1)
+            {
+                temp=A[i];
+                count=0;
+            }
+        }
+    }
+    count=0;//当没有超过一半元素的时候，需要数一遍确认一下有没有超过一半就解决了
+    for(int i=0;i<n;i++)
+    {
+        if(A[i]==temp)
+        {
+            count++;
+        }
+    }
+    if(count>(n/2))
+        cout<<"主元素是"<<temp<<endl;
+    else
+        cout<<"没有主元素"<<endl;
+    return temp;
+}
+
+
