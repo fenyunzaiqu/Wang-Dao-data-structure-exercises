@@ -30,6 +30,7 @@ bool findxinseq(Seqlist &L, int x);//在递增有序顺序表中找到值为x的
 char *moveleftp(char A[], int p ,int n);//将一维数组中的数据左移p 2.10
 int findmidnumber(int A[], int B[], int n);//找出两个等长升序数列的中位数 2.11
 int majornumber(int A[],int n);//找出出现次数超过一半的元素 2.12
+int findminmiss(int A[],int n);//找出未出现的最小正整数 2.13
 
 
 int main()
@@ -55,6 +56,11 @@ cout<<findmidnumber(A, B, 5)<<endl;
 /* 2.12题的测试数据
 int A[]={1,2,1,1,4,1,1,1,2,3,1,1,2,3,2};
 cout<<majornumber(A, 14)<<endl;
+*/
+/* 2.13题的测试数据
+int A[]={-3,0,1,2,3,5};
+findminmiss(A, 6);
+cout<<findminmiss(A, 6)<<endl;
 */
 creat(L);
 cout<<"改变前的元素为："<<endl;
@@ -403,6 +409,31 @@ int majornumber(int A[],int n)
     else
         cout<<"没有主元素"<<endl;
     return temp;
+}
+
+//找到最小未出现的正整数2.13
+int findminmiss(int A[],int n)//给出的空间换时间的算法答案我不太满意，但也想不到更好的办法
+{
+    int j=0,B[n];
+    for(int i=0;i<n;i++)//也可以用memeset的方法来初始长度为n的全为0的数组
+    {
+        B[i]=0;
+    }
+    for(int i=0;i<n;i++)
+    {
+        if(A[i]>0&&A[i]<=n)
+            B[A[i]-1]=1;//用B的位置来标记有没有出现过值=B位置的最下正整数
+    }
+    for(int i=0;i<n;i++)
+    {
+    if(B[i]==0)//最后输出第一个没有被标记的位置，也即为A没有出现的最小正整数的值
+    {
+        j=i;
+        cout<<"最小正整数为"<<i+1<<endl;
+        break;
+    }
+    }
+    return j;
 }
 
 
