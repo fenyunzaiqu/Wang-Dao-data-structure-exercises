@@ -11,6 +11,11 @@ typedef struct Node{
     int data;
     struct Node *next;//因为指针要和它指向的变量是一个数据类型，next指针要指向下一个Lnode，所以也要用Lnode来定义
 }LNode, *Linklist;//等同于Node定义了Linklist和LNode，这里下面的Lnode *强调返回的是一个结点（和上面的Node不是一个东西，上面的Node是方法），如Lnode * GetElem(Linklist L, int i)一目了然
+typedef struct NodeD{
+    int data;
+    struct NodeD *pr;
+    struct NodeD *next;
+}DNode,*DLinklist;
 
 Linklist List_HeadInsert(Linklist &L);//通过头插法来初始化单链表
 Linklist List_TrailInsert(Linklist &L);//通过尾插法来初始化单链表
@@ -34,12 +39,25 @@ void DeleteSame(Linklist &L);//2.3.12 在递增单链表中删除相同元素
 void MergeAscendList(Linklist &A,Linklist &B);//2.3.13 将两个递增单链表合成为一个递减单链表
 Linklist Get_Common(Linklist A,Linklist B);//2.3.14 找出两个递增链表的公共元素，创建出一个新链表
 Linklist Union(Linklist &A,Linklist &B);//2.3.15 将两个递增单链表求交集，存放在A链表中
+int Pattern(Linklist A,Linklist B);//2.3.16 判断B的序列是不是A的子序列
+int Symmetry(DLinklist DL);//2.3.17 判断一个循环双链表是否对称
+DLinklist DList_HeadInsert(DLinklist &DL);//头插法创建一个带头节点的循环双链表
+void showDLinklist(DLinklist &DL);//展示循环双链表
+void showCirularLinklist(Linklist L);//展示循环单链表
+Linklist CreateCircularLinklistWithHead(Linklist &L);//创建有头节点的循环单链表
+Linklist LinkTwoCircularLinklistWithHead(Linklist &h1,Linklist &h2);//2.3.18 将h2循环单链表接到h1后面
+void DeleteMinToNull(Linklist &L);//2.3.19 每次删除循环单链表中最小的节点并释放，直到链表为空
 
 int main()
 {
     Linklist L=nullptr;
+    Linklist B=NULL;
+    DLinklist DL;
+    DList_HeadInsert(DL);
     List_TrailInsert(L);
     showLinklist(L);
+    List_HeadInsert(B);
+    showDLinklist(DL);
 /* 2.3.1题的输入输出测试
     List_HeadInsertWithoutHead(L);
     showLinklist(L);
@@ -88,16 +106,21 @@ int main()
     //showLinklist(Discrete(L)); 2.3.10将奇偶序号的元素分为两个链表，这个返回的事偶数序号的链表，原来的链表被接上了奇数序号节点z
     //showLinklist(Discrete2(L));2.3.11一个用尾插法，一个用头插法
     //DeleteSame(L);2.3.12 将重复的元素删除
-    /* 2.3.13 合并两个递增单链表为单个递减单链表
-    Linklist B=NULL;
-    List_HeadInsert(B);
-    MergeAscendList(L, B);
-    */
-    /* 2.3.14
-    Linklist B=NULL;
-    List_HeadInsert(B);
-    showLinklist(Get_Common(L, B));
-    */
+    //MergeAscendList(L, B);2.3.13 合并两个递增单链表为单个递减单链表
+    //showLinklist(Get_Common(L, B));2.3.15 一个奇数序号尾插，一个偶数序号头插
+    //Pattern(L, B);2.3.16 判断B是不是A的子序列
+    //Symmetry(DL);2.3.17 判断循环双链表是否对称
+    /*2.3.18 将两个循环单链表连起来，且还为循环形式
+    Linklist h1=NULL,h2=NULL;
+    CreateCircularLinklistWithHead(h1);
+    CreateCircularLinklistWithHead(h2);
+    showCirularLinklist(h1);
+    LinkTwoCircularLinklistWithHead(h1, h2);
+    showCirularLinklist(h1);
+     */
+    Linklist h1=NULL;
+    CreateCircularLinklistWithHead(h1);
+    DeleteMinToNull(h1);
     showLinklist(L);
 
 
@@ -112,7 +135,7 @@ Linklist List_HeadInsert(Linklist &L)
     L=(Linklist)malloc(sizeof(Node));
     //定义头节点L,并申请内存空间，其中Linklist也可以换成Node*，是一个东西，代表申请空间的数据类型是啥。当没有这个头节点L的时候，需要在每次插入新节点后将它的地址赋值给L 即L=s;
     L->next=nullptr;
-    int A[]={7,6,4,3,2,1};
+    int A[]={7,5,4,3,3};
     for(int i=0;i<(sizeof(A)/sizeof(int));i++)
     {
         s=(Node*)malloc(sizeof(Node));
@@ -153,6 +176,78 @@ Linklist List_TrailInsert(Linklist &L)
     }
     r->next=NULL;//最后赋值初始化完需要将尾指针置空来达到“它是尾指针”的目的
     return L;
+}
+
+//带头节点的循环双链表头插法
+DLinklist DList_HeadInsert(DLinklist &DL)
+{
+    DL=(DLinklist)malloc(sizeof(NodeD));
+    DNode *s;
+    DL->next=DL;DL->pr=DL;//初始化循环双链表
+    int A[]={1,2,3,3,2,1};
+    for(int i=0;i<sizeof(A)/sizeof(int);i++)
+    {
+        if(DL->next!=DL)
+        {
+            s=(DNode*)malloc(sizeof(NodeD));
+            s->data=A[i];
+            s->next=DL->next;
+            DL->next->pr=s;
+            DL->next=s;
+            s->pr=DL;
+        }
+        else
+        {
+            s=(DNode*)malloc(sizeof(NodeD));
+            s->data=A[i];
+            s->next=DL->next;
+            DL->next=s;
+            s->pr=DL;
+            DL->pr=s;
+        }
+    }
+    return DL;
+}
+
+//创建有头节点的循环单链表，尾插法
+Linklist CreateCircularLinklistWithHead(Linklist &L)
+{
+    L=(Linklist)malloc(sizeof(Node));
+    Node *r=L,*s;
+    int A[]={1,2,3};
+    for(int i=0;i<sizeof(A)/sizeof(int);i++)
+    {
+        s=(Node*)malloc(sizeof(Node));
+        s->data=A[i];
+        r->next=s;
+        r=s;
+    }
+    r->next=L;
+    return L;
+}
+
+//展示循环双链表
+void showDLinklist(DLinklist &DL)
+{
+    DNode *s=DL->next;
+    while(s!=DL)//当s没回到头节点
+    {
+        cout<<s->data<<" ";
+        s=s->next;
+    }
+    cout<<endl;
+}
+
+//展示循环单链表
+void showCirularLinklist(Linklist L)
+{
+    Node *s=L->next;
+    while(s!=L)
+    {
+        cout<<s->data<<" ";
+        s=s->next;
+    }
+    cout<<endl;
 }
 
 //按序号查找节点值
@@ -571,4 +666,94 @@ Linklist Union(Linklist &A,Linklist &B)
     pc->next=NULL;//设置尾节点
     free(B);//删除B头
     return A;
+}
+
+//2.3.16 判断B是不是A的子序列
+int Pattern(Linklist A,Linklist B)
+{
+    Node *ra=A->next,*rb=B->next,*pre=ra;//扫描是有一个没对上，A的扫描指针就往后移一个，然后B指针从头开始扫，所以这个pre指针很关键
+    while(ra!=NULL&&rb!=NULL)//其实真正节省空间的判断条件是A的剩余长度小于B的长度就停止循环
+    {
+        if(ra->data==rb->data)//指针共同前进
+        {
+            ra=ra->next;
+            rb=rb->next;
+        }
+        else//指针重置
+        {
+            pre=pre->next;
+            rb=B->next;
+            ra=pre;
+        }
+    }
+    if(rb==NULL)//B扫完了
+    {
+        cout<<"B是A的子序列"<<endl;
+        return 1;
+    }
+    else
+    {
+        cout<<"B不是A的子序列"<<endl;
+        return 0;
+    }
+}
+
+//2.3.17 判断双链表是否对称
+int Symmetry(DLinklist DL)
+{
+    DNode *p=DL->next,*q=DL->pr;
+    while (p!=q&&q->next!=p) {//如果是偶数个元素，那么终止条件尾p的下一个不为q，如果为偶数个元素，那么循环终止条件p不为q
+        if(p->data==q->data)
+        {
+            p=p->next;//p往前指q往后指
+            q=q->pr;
+        }
+        else
+        {
+            cout<<"不为对称双链表"<<endl;
+            return 0;
+        }
+    }
+    cout<<"为循环双链表"<<endl;
+    return 1;
+}
+
+//2.3.18 将h2循环单链表接到h1后面，保持循环链表
+Linklist LinkTwoCircularLinklistWithHead(Linklist &h1,Linklist &h2)
+{
+    Node *p=h1,*q;//p指向h1的尾节点，q指向h2的尾节点
+    while(p->next!=h1)
+        p=p->next;
+    q=h2;
+    while(q->next!=h2)
+        q=q->next;
+    p->next=h2;
+    q->next=h1;
+    return h1;
+}
+
+//2.3.19 每次将循环单链表中最小的元素删除直到为空
+void DeleteMinToNull(Linklist &L)
+{
+    Node *min,*p,*premin,*pre;//要四个变量，两个不够，三个也不够,且初始化放循环里，删一个节点就初始化
+    while(L->next!=L)//这里结束循环的条件是只剩一个头节点，那么它的下一个节点也是自己
+    {
+        p=L->next;pre=L;
+        min=p;premin=pre;
+        while(p!=L)
+        {
+            if(p->data<min->data)
+            {
+                min=p;//赋值
+                premin=pre;
+            }
+            p=p->next;
+            pre=pre->next;//移动节点
+        }
+        cout<<min->data<<" ";
+        premin->next=min->next;
+        free(min);//释放
+    }
+    cout<<endl;
+    free(L);
 }
