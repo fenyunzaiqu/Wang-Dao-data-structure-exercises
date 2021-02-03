@@ -6,16 +6,30 @@
 //
 
 #include <iostream>
+#include <vector>
 using namespace::std;
 typedef struct Node{
     int data;
     struct Node *next;//因为指针要和它指向的变量是一个数据类型，next指针要指向下一个Lnode，所以也要用Lnode来定义
 }LNode, *Linklist;//等同于Node定义了Linklist和LNode，这里下面的Lnode *强调返回的是一个结点（和上面的Node不是一个东西，上面的Node是方法），如Lnode * GetElem(Linklist L, int i)一目了然
+//循环双链表
 typedef struct NodeD{
     int data;
     struct NodeD *pr;
     struct NodeD *next;
 }DNode,*DLinklist;
+//20题非循环双链表
+typedef struct NonNode{
+    int data;
+    int freq;
+    struct NonNode *pred;
+    struct NonNode *next;
+}NonDNode,*NonDLinklist;
+//22题字母
+typedef struct word{
+    char data;
+    struct word *next;
+}wordNode,*wordList;
 
 Linklist List_HeadInsert(Linklist &L);//通过头插法来初始化单链表
 Linklist List_TrailInsert(Linklist &L);//通过尾插法来初始化单链表
@@ -47,6 +61,13 @@ void showCirularLinklist(Linklist L);//展示循环单链表
 Linklist CreateCircularLinklistWithHead(Linklist &L);//创建有头节点的循环单链表
 Linklist LinkTwoCircularLinklistWithHead(Linklist &h1,Linklist &h2);//2.3.18 将h2循环单链表接到h1后面
 void DeleteMinToNull(Linklist &L);//2.3.19 每次删除循环单链表中最小的节点并释放，直到链表为空
+NonDLinklist CreateNonCircularDLinklistWithHead(NonDLinklist &L);//创建带头节点和freq的非循环双向链表
+NonDLinklist Locate(NonDLinklist &L, int x);//2.3.20 查找x的节点，摘下（删除），然后插入到该被插（freq）的地方
+int FindLastKposition(Linklist L, int k);//2.3.21 找到单链表倒数第k个位置的元素的值
+wordList CreateWordListWithHead(wordList &L, vector<char>A, wordList &r);
+int wordlen(wordNode *L);
+wordNode* find_addr(wordNode *str1,wordNode *str2);
+
 
 int main()
 {
@@ -118,9 +139,31 @@ int main()
     LinkTwoCircularLinklistWithHead(h1, h2);
     showCirularLinklist(h1);
      */
+    /*2.3.19的测试流程
     Linklist h1=NULL;
     CreateCircularLinklistWithHead(h1);
     DeleteMinToNull(h1);
+    */
+    /*2.3.20的测试流程
+    NonDLinklist L2;
+    CreateNonCircularDLinklistWithHead(L2);
+    cout<<Locate(L2, 2)<<endl;
+    Locate(L2, 3);
+    Locate(L2, 3);
+    */
+    //FindLastKposition(L, 4);2.3.21 找出倒数第k个元素
+    /* 2.3.22 创建一个有公共后缀的链表好，找出公共节点的地址
+    vector<char>A1={'l','o','a','d'};
+    vector<char>B1={'b','e'};
+    vector<char>C1={'i','n','g'};
+    wordList L1,L2,L3,pl1,pl2,pl3;
+    CreateWordListWithHead(L1, A1, pl1);
+    CreateWordListWithHead(L2, B1, pl2);
+    CreateWordListWithHead(L3, C1, pl3);
+    pl1->next=L3->next;
+    pl2->next=L3->next;
+    cout<<find_addr(L1, L2)->data<<endl;
+    */
     showLinklist(L);
 
 
@@ -223,6 +266,44 @@ Linklist CreateCircularLinklistWithHead(Linklist &L)
         r=s;
     }
     r->next=L;
+    return L;
+}
+
+//尾插法创建非循环双链表
+NonDLinklist CreateNonCircularDLinklistWithHead(NonDLinklist &L)
+{
+    L=(NonDLinklist)malloc(sizeof(NonNode));
+    L->pred=NULL;
+    NonDNode *s,*r=L;
+    int A[]={1,2,3,4,5,6,7};
+    for(int i=0;i<sizeof(A)/sizeof(int);i++)
+    {
+        s=(NonDNode*)malloc(sizeof(NonNode));
+        s->data=A[i];
+        s->freq=0;
+        r->next=s;
+        s->pred=r;
+        s->next=NULL;
+        r=s;
+    }
+    return L;
+}
+
+//尾插法
+wordList CreateWordListWithHead(wordList &L, vector<char>A,wordList &r)
+{
+    L=(wordList)malloc(sizeof(word));
+    L->next=NULL;
+    wordNode *s;
+    r=L;//r为尾指针
+    for(int i=0;i<A.size();i++)
+    {
+        s=(wordNode*)malloc(sizeof(word));
+        s->data=A[i];
+        s->next=NULL;
+        r->next=s;
+        r=s;
+    }
     return L;
 }
 
@@ -756,4 +837,91 @@ void DeleteMinToNull(Linklist &L)
     }
     cout<<endl;
     free(L);
+}
+
+//2.3.20 x元素的查找，删除，插入算法
+NonDLinklist Locate(NonDLinklist &L, int x)
+{
+    NonDNode *r=L->next,*p;
+    while(r!=NULL)
+    {
+        if(r->data==x)//找到x元素的位置
+        {
+            r->freq++;
+            if(r->next==NULL)//防止r元素在最后一位，将r前后链接，把r摘出来
+            {
+                r->pred->next=NULL;
+            }
+            else
+            {
+                r->pred->next=r->next;
+            }
+            break;
+        }
+        r=r->next;//没找到就遍历
+    }
+    p=r->pred;//p为r前一个节点，因为r的freq增加了一，肯定至少要往前挪
+    while (p!=L&&p->freq<=r->freq) {//查找要插入的位置，到头节点或频率刚刚大于找出来的r节点位置
+        p=p->pred;//往前挪
+    }
+    r->next=p->next;//首先，插入的位置是在p和p的下一个之间，所以r的下一个是p的下一个
+    p->next->pred=r;//然后p的下一个的前一个是r，也就是p的下一个和r链接起来了
+    r->pred=p;//将r和p链接
+    p->next=r;
+    return r;//返回找到的元素的地址
+}
+
+//2.3.21 找出倒数第k个元素
+int FindLastKposition(Linklist L,int k)
+{
+    Node *p=L->next,*pr=p;//p是往前k个，pr是一开始
+    int count=0;//计数，让p跑到前面第k个地方
+    while(count!=k)
+    {
+        p=p->next;
+        count++;
+    }
+    while(p!=NULL)//p到末尾，pr就是倒数第k个了
+    {
+        p=p->next;
+        pr=pr->next;
+    }
+    if(count<k)
+        return 0;
+    else
+    {
+        cout<<pr->data<<endl;
+        return 1;
+    }
+}
+
+int wordlen(wordNode *L)
+{
+    int count=0;
+    wordNode *p=L;
+    while(p!=NULL)
+    {
+        count++;
+        p=p->next;
+    }
+    return count;
+}
+
+//2.3.22 找到公共后缀节点
+wordNode* find_addr(wordNode *str1,wordNode *str2)
+{
+    int m,n;
+    wordNode *p,*q;
+    m=wordlen(str1);
+    n=wordlen(str2);
+    for(p=str1;m>n;m--)//这个用for赋值并用来判断m和n哪个大的写法非常有意思
+    p=p->next;
+    for(q=str2;n>m;n--)
+    q=q->next;
+    while(p->next!=NULL&&p->next!=q->next)
+    {
+        p=p->next;
+        q=q->next;
+    }
+    return p->next;
 }
