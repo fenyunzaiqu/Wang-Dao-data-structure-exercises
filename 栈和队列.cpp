@@ -14,6 +14,11 @@ typedef struct{
 }SqStack;//顺序栈
 
 typedef struct{
+    char data [MaxSize];
+    int top;
+}Stack;//顺序栈
+
+typedef struct{
     int data [MaxSize];
     int top[2];//共享栈的前后两个指针
 }sharestack;
@@ -23,6 +28,10 @@ typedef struct Node
     char data;
     Node *next;
 }LNode,*Linklist;
+
+typedef struct{
+    LNode *front,*rear;
+}LinkQueue;
 
 typedef struct
 {
@@ -42,17 +51,30 @@ bool PushshareStack(int i, int x,sharestack &s);//3.1.5 共享栈的pop和push�
 bool PopshareStack(int i, sharestack &s);
 int CreatetagSqQuence(tagSqQuence &Q,vector<int>A);//创造一个队列
 bool DetagSqQuence(tagSqQuence &Q,int &x);//退队列操作
+bool EntagSqQuence(tagSqQuence &Q,int x);//入队操作
 bool InverseSqQuence(tagSqQuence Q, SqStack S);//用栈将队列的元素逆置
 bool StackOverflow(SqStack S);//判断栈是否溢出
 int EnQueue(SqStack &S1,SqStack &S2, int x);//模拟队列的入队列
 bool StackEmpty(SqStack S);//判断栈是否为空
 void DeQueue(SqStack &S1,SqStack &S2, int x);//模拟队列出队列
 bool ifQueueEmpty(SqStack S1,SqStack S2);//判断队列是否为空
+bool ifLinkQueueEmpty(LinkQueue LQ);//判断链式队列是否为空
+void EnLinkQueue(LinkQueue &LQ,int x);//链式队列入队
+bool DeLinkQueue(LinkQueue &LQ,int &x);//链式队列出队
+bool IfBracketsSymmerty(Stack &S,vector<char>A);//3.3.1 判断括号是否对称
+bool charPopStack(Stack &S,char &x);//推出栈
+bool charPushStack(Stack &S, char x);//推进栈
+void Train_Arrange(char *train);//3.3.2 火车安排
+void Train_Arrange2(char *train);//3.3.2 火车安排第二种写法
+double Calculate(int n,double x);//3.3.3 用栈实现递归函数的非递归运算
+
 
 int main()
 {
     SqStack S;
     S.top=-1;
+    Stack b;
+    b.top=-1;
     /* 3.1.3测试数据与答案
      char A[]={'I','I','I','O','O','I','O','O'};
     IfStackLegal(A);
@@ -70,6 +92,7 @@ int main()
     PushshareStack(0, 2, B);
     PopshareStack(0, B);
      */
+    /*tag队列Q
     vector<int>A={1,2,3,4,5,6,7,8,9,10};
     tagSqQuence Q;
     Q.front=0;
@@ -77,6 +100,15 @@ int main()
     Q.tag=0;
     CreatetagSqQuence(Q, A);
     InverseSqQuence(Q, S);
+     */
+    LinkQueue LQ;
+    LQ.rear=LQ.front=(LNode*)malloc(sizeof(LNode));//初始化链式队列
+    LQ.front->next=NULL;
+    /*括号匹配的测试程序
+    vector<char>B={'[','{','}',']','{'};
+    IfBracketsSymmerty(b, B);
+    */
+    
     /*
     int x;
     for(int i=0;i<MaxSize;i++)
@@ -86,6 +118,9 @@ int main()
             break;
     }
     */
+    //char train[]={'H','S','H'};测试数据
+    //Train_Arrange2(train); 还有trainArrange2 两种写法
+    cout<<Calculate(4, 1);
     return 0;
 }
 
@@ -101,7 +136,8 @@ bool CreatStack(SqStack &S, vector<int>A)
     return true;
 }
 
-bool PopStack(SqStack &S, int x)
+//bool PopStack(SqStack &S, int x)
+bool charPushStack(Stack &S, char x)
 {
     if(S.top==MaxSize-1)
         return false;
@@ -111,8 +147,24 @@ bool PopStack(SqStack &S, int x)
         return true;
     }
 }
-
+bool PopStack(SqStack &S, int x)
+{
+    if(S.top==-1)
+        return false;
+    x=S.data[S.top--];//取出来后top指针--
+    return true;
+}
+    
 bool PushStack(SqStack &S,int &x)
+{
+    if(S.top==-1)
+        return false;
+    x=S.data[S.top--];//取出来后top指针--
+    return true;
+}
+
+//bool PushStack(SqStack &S,int &x)
+bool charPopStack(Stack &S,char &x)
 {
     if(S.top==-1)
         return false;
@@ -314,6 +366,19 @@ bool DetagSqQuence(tagSqQuence &Q,int &x)
     Q.tag=0;
     return true;
 }
+bool EntagSqQuence(tagSqQuence &Q,int x)
+{
+    if(Q.front==Q.rear&&Q.tag==1)
+    {
+        cout<<"队列已满"<<endl;
+        return false;
+    }
+    Q.data[Q.rear%MaxSize]=x;
+    Q.rear++;
+    if(Q.rear==Q.front)
+        Q.tag=1;
+    return true;
+}
 
 bool InverseSqQuence(tagSqQuence Q, SqStack S)
 {
@@ -389,5 +454,205 @@ bool ifQueueEmpty(SqStack S1,SqStack S2)
     {
         cout<<"队列不为空"<<endl;
         return false;
+    }
+}
+
+bool ifLinkQueueEmpty(LinkQueue LQ)
+{
+    if(LQ.front==LQ.rear)
+    {
+        cout<<"队列为空"<<endl;
+        return true;
+    }
+    else
+    {
+        cout<<"队列不为空"<<endl;
+        return false;
+    }
+}
+
+void EnLinkQueue(LinkQueue &LQ,int x)
+{
+    if(LQ.front==LQ.rear->next)
+    {
+        LNode *s=(LNode*)malloc(sizeof(LNode));//申请空间
+        s->data=x;//输入数值
+        s->next=LQ.rear->next;//将新节点与要插入的节点的后继连接起来
+        LQ.rear->next=s;//将新节点与前节点连接起来
+        LQ.rear=s;//将rear往后移
+    }
+    else
+    {
+        LQ.rear->data=x;//如果队列没满，则将数据写入x的新数据
+        LQ.rear=LQ.rear->next;//
+    }
+}
+
+bool DeLinkQueue(LinkQueue &LQ,int &x)
+{
+    if(LQ.front==LQ.rear)
+    {
+        cout<<"队列为空"<<endl;
+        return false;
+    }
+    else
+    {
+        x=LQ.front->data;
+        LQ.front=LQ.front->next;
+        return true;
+    }
+}
+
+bool IfBracketsSymmerty(Stack &S,vector<char>A)
+{
+    char e;
+    for(int i=0;A[i]!='\0';i++)//用case替代各种if来判断各种括号
+    {
+        switch (A[i]) {//左括号进栈
+            case '(':
+                charPushStack(S, '(');
+                break;
+            case '{':
+                charPushStack(S, '{');
+                break;
+            case '[':
+                charPushStack(S, '[');
+                break;
+            case ')'://遇到右括号，就把栈里的左括号pop出来看是否匹配
+                charPopStack(S, e);
+                if(e!='(')
+                    return false;
+                break;
+            case '}':
+                charPopStack(S, e);
+                if(e!='{')
+                    return false;
+                break;
+            case ']':
+                charPopStack(S, e);
+                if(e!='[')
+                    return false;
+                break;
+            default:
+                break;
+        }
+    }
+    if(S.top!=-1)
+    {
+        cout<<"括号不匹配"<<endl;
+        return false;
+    }
+    else
+    {
+        cout<<"括号匹配"<<endl;
+        return true;
+    }
+}
+
+void Train_Arrange(char *train)
+{
+    char *p=train,*q=train,c;
+    Stack b;
+    b.top=-1;
+    while(*p)
+    {
+        if(*p=='H')
+            charPushStack(b, 'H');
+        else
+            *(q++)=*p;//用指针q将值为s的指到一起，即S都放在前面
+        p++;
+    }
+    while(b.top!=-1)
+    {
+        charPopStack(b, c);
+        *(q++)=c;//然后用指针q将值为h的接到后面
+    }
+    cout<<train<<endl;//train头指针地址没变 一切ok
+}
+
+void Train_Arrange2(char *train)
+{
+    char c;
+    Stack b;
+    b.top=-1;
+    int j=0;
+    for(int i=0;train[i]!='\0';i++)//通过访问数组遍历
+    {
+        if(train[i]=='H')
+        {
+            charPushStack(b, 'H');
+        }
+        else
+            train[j]=train[i];//重写数组
+    }
+    while(j!='\0')
+    {
+        charPopStack(b, c);
+        train[j]=c;//重写数组后面
+        j++;
+    }
+    cout<<train<<endl;
+}
+
+double Calculate(int n,double x)
+{
+    struct calstack{
+        int no;//存n的值
+        double val;//存Pn（x)的值
+    }st[MaxSize];
+    int top=-1,i;
+    double fv1=1,fv2=2*x;//n=0,n=1时的初值
+    for(i=n;i>=2;i--)//用来存栈里放的n值
+    {
+        top++;
+        st[top].no=i;
+    }
+    while(top>-1)//从p1,p2,p3,p4一直往上递归
+    {
+        st[top].val=2*x*fv2-2*(st[top].no-1)*fv1;//递归公式,pn=f(pn-1,pn-2)
+        fv1=fv2;//然后把pn-2赋给pn-1
+        fv2=st[top].val;//
+        top--;
+    }
+    if(n==0)
+        return fv1;
+    else
+        return fv2;
+}
+
+tagSqQuence q,q1,q2;
+void manager()
+{
+    int x;
+    int i=0,j=0;
+    while(j<10)
+    {
+        if(q.front!=q.rear&&q.tag!=1&&i<4)
+        {
+            DetagSqQuence(q1, x);
+            EntagSqQuence(q, x);
+            i++;//用来计数客车
+            j++;//用来计数船上总数
+        }
+        else if(i==4&&q2.front!=q2.rear&&q2.tag!=1)
+        {
+            DetagSqQuence(q2, x);
+            EntagSqQuence(q, x);
+            j++;//船上加
+            i=0;
+        }
+        else
+        {
+            while(j<10&&i<4&&q2.rear!=q2.front&&q2.tag!=1)//客车队列空（有货车）且客车没上够4辆，用货车代替
+            {
+                DetagSqQuence(q2, x);
+                EntagSqQuence(q, x);
+                i++;
+                j++;
+            }
+            i=0;//等待，客车全上船
+        }
+        if(q1.front==q1.rear&&q1.tag==0&&q2.front==q2.rear&&q2.tag==0)
+            j=11;//如果两个队列都为空了，则j=11跳出循环
     }
 }
