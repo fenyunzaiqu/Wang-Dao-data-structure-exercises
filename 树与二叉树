@@ -1,0 +1,851 @@
+//
+//  main.cpp
+//  树与二叉树
+//
+//  Created by 周南 on 2021/2/16.
+//
+
+#include <iostream>
+#define maxsize 100
+using namespace std;
+
+typedef struct BiT{
+    int data;
+    struct BiT *lchild,*rchild;
+}BiTNode,*BiTree;
+
+typedef struct{
+    BiTree data [maxsize];
+    int front,rear;
+}SqQueue;
+
+typedef struct
+{
+    BiTree data[maxsize];
+    int top;
+}Sqstack;
+
+typedef struct{
+    BiTree data;
+    int tag;
+}stack;
+
+typedef struct{
+    BiTree data [maxsize];
+    int level [maxsize];
+    int front,rear;
+}WideQueue;
+
+typedef struct ThreadNode
+{
+    int data;
+    struct ThreadNode *lchild,*rchild;
+    int ltag=0,rtag=0;//要么是把所有标记初始化为0，要么就在线索化的时候记得如果有左右子树就把标记赋值为0
+}ThreadNode,*ThreadTree;
+
+typedef struct node
+{
+    char data[10];
+    struct node *left,*right;
+}charBTree;
+
+BiTree pre1=NULL,head1=NULL;
+
+void PreOrder(BiTree T);//前中后序递归算法
+void InOrder(BiTree T);
+void PostOrder(BiTree T);
+void InitSqQueue(SqQueue &Q);
+bool DeSqQueue(SqQueue &Q,BiTNode &x);
+bool EnSqQueue(SqQueue &Q, BiTree x);
+void InOrder2(BiTree T);//中序非递归算法
+bool Push(Sqstack &S,BiTree x);
+bool Pop(Sqstack &S,BiTree &x);
+void PreOrder2(BiTree T);//前序非递归算法
+void PostOrder2(BiTree T);//后序非递归算法
+void LevelOrder(BiTree T);//层次遍历算法
+void LevelOrder2(BiTree T);//反向层次遍历
+BiTree CreateBitTree(int *pre,int *in,int n);//用前中序创造唯一二叉树
+int BitTreeDepth(BiTree T);//求树的高度
+int BitTreeDepth2(BiTree T);//求树的高度，递归算法
+bool IfCompleteBrianyTree(BiTree T);//判断是不是完全二叉树
+int twobranches(BiTree T);//求两个分支的个数
+void SwapLeftToRight(BiTree &T);//11 交换左右结点
+int NumberKNode(BiTree T,int k);//找到先序遍历的第k个节点
+int i1=1;
+int ch;//用来存节点data域
+void DeleteXTree(BiTree T);//删除X节点的所有子树（儿子
+void SearchXTree(BiTree T,int x);//找到X节点
+void SearchAndPrintNodeX(BiTree T,int x);//找到节点X并打印祖先
+BiTree Ancestor(BiTree T,int x,int y);//找到两个节点的祖先
+int BTWidth(BiTree T);//一个树的最大宽度
+void PretoPost(int pre[],int l1,int h1,int post[],int l2,int h2);//前序转后序
+BiTree InOrderChangeTreetoList(BiTree T);//叶节点转换为单链表
+BiTree PreOrderChangeTreetoList(BiTree T);
+bool IfTwoTreeSimliar(BiTree T,BiTree N);//两个子树是否相同的递归算法
+void InThread(ThreadTree &T,ThreadTree &pre);//构造中序线索树
+ThreadTree CreateBitThreadTree(int *pre,int *in,int n);
+void CreateInThread(ThreadTree T);
+ThreadTree FindPostPreInOrder(ThreadTree T,ThreadTree p);
+int WPL(BiTree T);//权值的先序遍历
+int wpl_PreOrder(BiTree T,int deep);
+int wpl_InOrder(BiTree T);
+void charTreeToEqual (charBTree *T);
+void charTreetoExp (charBTree *T,int deep);
+
+int main() {
+    int creatpre1[]={1,2,4,7,3,5,6,8};
+    int creatin1[]={4,7,2,1,5,3,8,6};
+    int pre2[]={1,2,4,5,3,6,7};
+    int in2[]={4,2,5,1,6,3,7};
+    BiTree T=CreateBitTree(creatpre1, creatin1, 8);
+    //BiTree N=CreateBitTree(pre, in, 8);
+    //cout<<BitTreeDepth2(CreateBitTree(pre, in, 8))<<endl;
+    //cout<<IfCompleteBrianyTree(T);
+    //cout<<twobranches(T)<<endl;
+    LevelOrder(T);
+    cout<<endl;
+    //SwapLeftToRight(T);
+    //SearchXTree(T, 3);
+    //SearchAndPrintNodeX(T, 7);
+    //Ancestor(T, 4, 5);
+    //LevelOrder(T);
+    //BTWidth(T);
+    //int post2[]={0,0,0,0,0,0,0};
+    //PretoPost(pre2, 0, 6, post2, 0, 6);
+    //for(int i=0;i<7;i++)
+    //cout<<post2[i]<<" ";
+    //InOrderChangeTreetoList(T);
+    //PreOrderChangeTreetoList(T);
+    //cout<<IfTwoTreeSimliar(T, T)<<endl;
+    //ThreadTree T2=CreateBitThreadTree(creatpre1, creatin1, 8);
+    //CreateInThread(T2);
+    //ThreadTree p=T2->rchild->lchild;
+    //FindPostPreInOrder(T2,p);
+    //cout<<WPL(T)<<endl;
+    cout<<wpl_InOrder(T)<<endl;
+    return 0;
+}
+BiTree CreateBitTree(int *pre,int *in,int n)
+{
+    if(pre==NULL||in==NULL||n<=0)
+        return NULL;
+    BiTNode *root=new BiTNode;//每次递归申请新的节点空间
+    root->data=pre[0];//赋值
+    root->lchild=root->rchild=NULL;//先当叶节点处理
+    if(n==1&&*pre==*in)//如果是叶节点（最后一个节点）
+        return root;//返回地址给它的父母节点使用
+    int left_num=0;
+    int* in_root=in;
+    while(*in_root!=pre[0]&&in_root<=(in+n-1))//找根节点左边的节点
+    {
+        in_root++;
+        left_num++;
+    }
+    if(*in_root!=pre[0])
+    {
+        cout<<"未找到根节点"<<endl;
+        return NULL;
+    }
+    if(left_num>0)//左边递归构造
+        root->lchild=CreateBitTree(pre+1, in,left_num);//左节点=递归返回的地址
+    if(n-left_num-1>0)//右边递归构造
+        root->rchild=CreateBitTree(pre+left_num+1, in+left_num+1, n-left_num-1);//右节点=递归返回的地址
+    return root;//最后这个return root保证是返回的第一个根节点
+}
+
+bool Push(Sqstack &S,BiTree x)
+{
+    if(S.top==maxsize)
+        return false;
+    S.data[++S.top]=x;
+    return true;
+}
+
+bool Pop(Sqstack &S,BiTree &x)
+{
+    if(S.top==-1)
+        return false;
+    x=S.data[S.top--];
+    return true;
+}
+
+void PreOrder(BiTree T)//先序遍历
+{
+    if(T!=NULL)
+    {
+        cout<<T->data<<" ";
+        PreOrder(T->lchild);
+        PreOrder(T->rchild);
+    }
+}
+
+void InOrder(BiTree T)//中序遍历
+{
+    if(T!=NULL)
+    {
+        InOrder(T->lchild);
+        cout<<T->data<<" ";
+        InOrder(T->rchild);
+    }
+}
+
+void PostOrder(BiTree T)
+{
+    if(T!=NULL)
+    {
+        PostOrder(T->lchild);
+        PostOrder(T->rchild);
+        cout<<T->data<<" ";
+    }
+}
+
+void InitSqQueue(SqQueue &Q)
+{
+    Q.front=Q.rear=0;
+}
+
+bool EnSqQueue(SqQueue &Q, BiTree x)
+{
+    if((Q.rear+1)%maxsize==Q.front)
+        return false;
+    Q.data[Q.rear]=x;
+    Q.rear=(Q.rear+1)%maxsize;
+    return true;
+}
+
+bool DeSqQueue(SqQueue &Q,BiTree &x)
+{
+    if(Q.rear==Q.front)
+        return false;
+    x=Q.data[Q.front];
+    Q.front=(Q.front+1)%maxsize;
+    return true;
+}
+
+void LevelOrder(BiTree T)
+{
+    //int num=0;
+    SqQueue Q;
+    InitSqQueue(Q);
+    BiTree p;
+    EnSqQueue(Q,T);//入队
+    while(Q.rear!=Q.front)//队列不为空
+    {
+        DeSqQueue(Q, p);//先出队，访问节点，
+        cout<<p->data<<" ";
+        if(p->lchild!=NULL)
+            EnSqQueue(Q, p->lchild);//左右都入队
+        if(p->rchild!=NULL)
+            EnSqQueue(Q, p->rchild);
+        //if(p->rchild!=NULL&&p->lchild!=NULL)
+            //num++;
+    }
+    //cout<<num<<endl;
+}
+
+void InOrder2(BiTree T)
+{
+    Sqstack S;
+    S.top=-1;
+    BiTree p=T;//p是遍历指针
+    while(p||S.top!=-1)
+    {
+        if(p)//如果p不为空
+        {
+            Push(S, p);//一路向左，到左树尽头
+            p=p->lchild;
+        }
+        else
+        {
+            Pop(S, p);//到了没有左子树的节点，取出最后进去的，然后访问根节点，并到右节点最后
+            cout<<p->data<<" ";
+            p=p->rchild;
+        }
+    }
+}
+
+void PreOrder2(BiTree T)
+{
+    Sqstack S;
+    S.top=-1;
+    BiTree p=T;
+    while(p||S.top!=-1)
+    {
+        if(p)
+        {
+            cout<<p->data<<" ";
+            Push(S, p);
+            p=p->lchild;
+        }
+        else
+        {
+            Pop(S, p);
+            p=p->rchild;
+        }
+    }
+}
+
+void PostOrder2(BiTree T)
+{
+    Sqstack S;
+    S.top=-1;
+    BiTree p=T,r=NULL;
+    while(p||S.top!=-1)
+    {
+        if(p)//左节点入栈完
+        {
+            Push(S, p);
+            p=p->lchild;
+        }
+        else
+        {
+            p=S.data[S.top];//因为进这个分枝是空节点读一下
+            if(p->rchild&&p->rchild!=r)//如果右子树存在且没被读过
+            {
+                p=p->rchild;
+                Push(S, p);//入栈
+                p=p->lchild;//保证向右遍历到一个节点后，如果有左节点就先去左节点入栈，直到空，如果没有左节点，一开始就是空，那么再遍历右节点
+            }
+            else
+            {
+                Pop(S, p);//左右子树都被读完后，开始访问
+                cout<<p->data<<" ";
+                r=p;//标记这个子树读过了
+                p=NULL;
+            }
+        }
+    }
+}
+
+void LevelOrder2(BiTree T)
+{
+    BiTree x;
+    Sqstack S;
+    SqQueue Q;
+    InitSqQueue(Q);
+    S.top=-1;
+    EnSqQueue(Q, T);
+    while(Q.front!=Q.rear)
+    {
+        DeSqQueue(Q, x);
+        Push(S, x);
+        if(x->lchild!=NULL)
+            EnSqQueue(Q, x->lchild);
+        if(x->rchild!=NULL)
+            EnSqQueue(Q, x->rchild);
+    }
+    while(S.top!=-1)
+    {
+        cout<<S.data[S.top--]->data<<" ";//因为存的是地址，要用->访问data
+    }
+}
+
+int BitTreeDepth(BiTree T)
+{
+    if(!T)
+        return 0;
+    int level=0,last=0,rear=-1,front=-1;//一开始last在根节点
+    BiTree Q[maxsize];
+    Q[++rear]=T;
+    BiTree p;
+    while(front<rear)//队列不为空，或为树不空
+    {
+        p=Q[++front];
+        if(p->lchild)
+            Q[++rear]=p->lchild;
+        if(p->rchild)
+            Q[++rear]=p->rchild;
+        if(front==last)
+        {
+            level++;
+            last=rear;//然后last更新到右子树节点，当front遍历完第二层时,level++，rear为第三层最右边节点,last也变为第三层最右边节点
+        }
+    }
+    cout<<"层数为："<<level<<endl;
+    return level;
+}
+
+int BitTreeDepth2(BiTree T)
+{
+    if(T==NULL)//遍历到叶节点为止
+        return 0;
+    int ldepth=BitTreeDepth2(T->lchild);//从叶节点开始向上递归回去计算高度
+    int rdepth=BitTreeDepth2(T->rchild);
+    if(ldepth>rdepth)//返回左右高度最高的+1
+        return ldepth+1;
+    else
+        return rdepth+1;
+}
+
+bool IfCompleteBrianyTree(BiTree T)
+{
+    SqQueue Q;
+    InitSqQueue(Q);
+    BiTree p;
+    if(!T)
+        return true;
+    EnSqQueue(Q, T);
+    while(Q.front!=Q.rear)
+    {
+        DeSqQueue(Q, p);
+        if(p){
+            EnSqQueue(Q, p->lchild);//这里少了p->child是不是为空的判断，也就是空节点会被加入进去
+            EnSqQueue(Q, p->rchild);
+        }
+        else//如果是空节点，检查后面的节点
+        {
+            while (Q.rear!=Q.front) {//如果不是最后一个节点
+                DeSqQueue(Q, p);//排后面的节点
+                if(p)
+                {//如果是空
+                    cout<<"不是完全二叉表"<<endl;
+                    return false;//那么就不是完全二叉表
+                }
+            }
+        }
+    }
+    cout<<"是完全二叉表"<<endl;
+    return true;
+}
+
+int twobranches(BiTree T)
+{
+    if(T==NULL)
+        return 0;
+    else if(T->lchild!=NULL&&T->rchild!=NULL)//双分枝节点
+        return twobranches(T->lchild)+twobranches(T->rchild)+1;
+    else//单分支或叶节点
+        return twobranches(T->lchild)+twobranches(T->rchild);
+}
+
+void SwapLeftToRight(BiTree &T)
+{
+    BiTree temp;
+    if(T)
+    {
+        SwapLeftToRight(T->lchild);//访问到左子树的叶节点的父母
+        SwapLeftToRight(T->rchild);//换完后到右子树的叶节点的父母
+        temp=T->lchild;//交换
+        T->lchild=T->rchild;//最后根左右子树交换
+        T->rchild=temp;
+    }
+}
+
+int NumberKNode(BiTree T,int k)
+{
+    if(T==NULL)
+        return '#';//当遇到空节点时 ch=#
+    if(i1==k)//先访问根节点
+        return T->data;
+    i1++;//i来记录序号
+    ch=NumberKNode(T->lchild, k);//先遍历左子树
+    if(ch!='#')
+        return ch;
+    ch=NumberKNode(T->rchild, k);//左子树为空后开始遍历右子树
+    return ch;
+}
+
+void DeleteXTree(BiTree T)
+{
+    if(T)
+    {
+        DeleteXTree(T->lchild);
+        DeleteXTree(T->rchild);
+        free(T);
+    }
+}
+void SearchXTree(BiTree T,int x)
+{
+    BiTree p;
+    SqQueue Q;
+    if(T)
+    {
+        if(T->data==x)
+        {
+            DeleteXTree(T);
+            exit(0);
+        }
+    }
+    InitSqQueue(Q);
+    EnSqQueue(Q, T);
+    while(Q.front!=Q.rear)
+    {
+        DeSqQueue(Q, p);
+        if(p->lchild)//后序是左右根
+        {
+            if(p->lchild->data==x)//遍历到了
+            {
+                DeleteXTree(p->lchild);
+                p->lchild=NULL;
+            }
+            else//没遍历到
+            {
+                EnSqQueue(Q, p->lchild);
+            }
+        }
+        if(p->rchild)
+        {
+            if(p->rchild->data==x)
+            {
+                DeleteXTree(p->rchild);
+                p->rchild=NULL;
+            }
+            else
+            {
+                EnSqQueue(Q, p->rchild);
+            }
+        }
+    }
+}
+
+void SearchAndPrintNodeX(BiTree T,int x)
+{
+    stack S[maxsize];
+    int top=-1;
+    while(T!=NULL||top>-1)
+    {
+        while(T!=NULL&&T->data!=x)
+        {
+            S[++top].data=T;//把左节点都存栈里
+            S[top].tag=0;//tag=0代表左子树被访问
+            T=T->lchild;
+        }
+        if(T!=NULL&&T->data==x)//如果遍历到了,这里一定要加个T不为空，要不然会访问空节点的data，进而内存报错
+        {
+            cout<<"所有祖先节点的值为:"<<endl;
+            for(int i=0;i<top+1;i++)
+            {
+                cout<<S[i].data->data<<" ";//按遍历顺序输出祖先节点的值
+            }
+            exit(1);
+        }
+        while(top!=-1&&S[top].tag==1)//如果右子树被访问了，就退栈到没被访问的节点
+            top--;
+        if(top!=0)
+        {
+            S[top].tag=1;//开始访问右子树，并标记每一个访问过的右节点
+            T=S[top].data->rchild;//
+        }
+    }
+}
+
+BiTree Ancestor(BiTree T,int x,int y)
+{
+    stack S[maxsize],P[maxsize];
+    int tops=-1,topp=-1;
+    BiTree r=T;
+    while(r!=NULL||tops!=-1)//这里的判断条件是或
+    {
+        while(r!=NULL)
+        {
+            S[++tops].data=r;
+            S[tops].tag=0;//入栈，左子树访问标记
+            r=r->lchild;
+        }
+        while(tops!=-1&&S[tops].tag==1)//栈不空且右子树被访问了（入栈过了），也就是访问根节点
+        {
+            if(S[tops].data->data==x)//先找到偏左的x节点
+            {
+                for(int i=0;i<tops+1;i++)
+                {
+                    P[i]=S[i];//复制到辅助栈
+                }
+                topp=tops;//复制栈指针
+            }
+            if(S[tops].data->data==y)//后找到偏右的y节点
+            {
+                for(int i=tops;i>=0;i--)
+                {
+                    for(int j=topp;j>=0;j--)
+                    {
+                        if(P[j].data==S[i].data)//开始由近（下）向远（上）比较父亲节点
+                        {
+                            cout<<S[i].data->data<<endl;
+                            return S[i].data;
+                        }
+                    }
+                }
+            }
+            tops--;//如果左右子树都被访问过了，就“退栈”，看上面的节点有没有没被访问过右（左）子树的
+        }
+        if(tops!=-1)//如果栈不空（即没遍历完）且没有左树了
+        {
+            S[tops].tag=1;//开始访问右子树
+            r=S[tops].data->rchild;
+        }
+    }
+    return NULL;//没找到相同父母节点就返回空节点
+}
+
+int BTWidth(BiTree T)
+{
+    BiTree p=T;
+    int max,k,n,i;
+    WideQueue Q;
+    Q.front=Q.rear=-1;//队列头尾，队列为空
+    Q.data[++Q.rear]=T;
+    Q.level[Q.front]=1;//第一层
+    while(Q.front<Q.rear)//队列为空时遍历完
+    {
+        Q.front++;
+        p=Q.data[Q.front];
+        k=Q.level[Q.front];
+        if(p->lchild!=NULL)//左右节点入队
+        {
+            Q.data[++Q.rear]=p->lchild;//入队列
+            Q.level[Q.rear]=k+1;//记录这个节点是第几层的，如果是第k层节点的左右分支，那么层数就是k+1层
+        }
+        if(p->rchild!=NULL)
+        {
+            Q.data[++Q.rear]=p->rchild;
+             Q.level[Q.rear]=k+1;
+        }
+    }
+    max=0;
+    i=0;
+    k=1;
+    while(i<=Q.rear)//统计Q[0]到Q[rear]的所有节点
+    {
+        n=0;//统计第k层节点的个树
+        while(i<=Q.rear&&Q.level[i]==k)//第k层
+        {
+            n++;
+            i++;//i是遍历指针
+        }
+        k=Q.level[i];//遍历完后 k更新到下一层的值
+        if(n>max)
+            max=n;
+    }
+    cout<<max<<endl;
+    return max;
+}
+
+void PretoPost(int pre[],int l1,int h1,int post[],int l2,int h2)
+{
+    int half;
+    if(h1>=l1)
+    {
+        post[h2]=pre[l1];//前序的根节点是后序的那个子树的尾
+        half=(h1-l1)/2;
+        PretoPost(pre, l1+1, l1+half, post, l2, l2+half-1);//找到在先序的那个（左子树）在后序对应的范围
+        PretoPost(pre, l1+half+1, h1, post, l2+half, h2-1);//先序右子树在后序对应的范围
+    }
+}
+
+BiTree InOrderChangeTreetoList(BiTree T)
+//先左子树到空，然后看是不是叶节点，不是看右子树是不是，不是就返回上个节点。如果是那么如果是第一个最左叶节点，就把头的地址赋给head，如果不是第一个叶节点，那么前驱结点pre的右孩子域放指针。
+{
+    if(T)
+    {
+        InOrderChangeTreetoList(T->lchild);//遍历左子树
+        if(T->lchild==NULL&&T->rchild==NULL)//找到叶节点
+        {
+            if(pre1==NULL)//赋值头节点
+            {
+                head1=T;
+                pre1=T;
+            }
+            else
+            {
+                pre1->rchild=T;
+                pre1=T;//pre永远指向前驱结点
+            }
+        }
+        InOrderChangeTreetoList(T->rchild);
+        pre1->rchild=NULL;//遍历完设置链表尾
+    }
+    return head1;
+}
+
+BiTree PreOrderChangeTreetoList(BiTree T)//和遍历顺序无关，主要是
+{
+    if(T)
+    {
+        if(T->lchild==NULL&&T->rchild==NULL)
+        {
+            if(pre1==NULL)
+            {
+                head1=T;
+                pre1=T;
+            }
+            else
+            {
+                pre1->rchild=T;
+                pre1=T;
+            }
+        }
+        PreOrderChangeTreetoList(T->lchild);
+        PreOrderChangeTreetoList(T->rchild);
+        pre1->rchild=NULL;
+    }
+    return head1;
+}
+
+bool IfTwoTreeSimliar(BiTree T,BiTree N)
+{
+    int leftS,rightS;
+    if(T==NULL&&N==NULL)
+        return true;
+    else if(T==NULL||N==NULL)
+        return false;
+    else
+    {
+        leftS=IfTwoTreeSimliar(T->lchild, N->lchild);
+        rightS=IfTwoTreeSimliar(T->rchild, N->rchild);
+        return leftS&&rightS;
+    }
+}
+
+void InThread(ThreadTree &T,ThreadTree &threadpre)
+{
+    if(T!=NULL)
+    {
+        InThread(T->lchild, threadpre);//递归左子树
+        if(T->lchild==NULL)//如果左子树为空，那么左子树指针为空
+        {
+            T->lchild=threadpre;//用来放前驱结点
+            T->ltag=1;
+        }
+        if(threadpre!=NULL&&threadpre->rchild==NULL)//如果不是根节点，并且前驱节点的右子树指针为空
+        {
+            threadpre->rchild=T;//指向pre的下一个节点，也就是T
+            threadpre->rtag=1;
+        }
+        threadpre=T;//每次把前驱的左右子树域赋值完才能让pre前进一个到P
+        InThread(T->rchild,threadpre);
+    }
+}
+
+ThreadTree CreateBitThreadTree(int *pre,int *in,int n)
+{
+    if(pre==NULL||in==NULL||n<=0)
+        return NULL;
+    ThreadNode *root=new ThreadNode;//每次递归申请新的节点空间
+    root->data=pre[0];//赋值
+    root->lchild=root->rchild=NULL;//先当叶节点处理
+    if(n==1&&*pre==*in)//如果是叶节点（最后一个节点）
+        return root;//返回地址给它的父母节点使用
+    int left_num=0;
+    int* in_root=in;
+    while(*in_root!=pre[0]&&in_root<=(in+n-1))//找根节点左边的节点
+    {
+        in_root++;
+        left_num++;
+    }
+    if(*in_root!=pre[0])
+    {
+        cout<<"未找到根节点"<<endl;
+        return NULL;
+    }
+    if(left_num>0)//左边递归构造
+        root->lchild=CreateBitThreadTree(pre+1, in,left_num);//左节点=递归返回的地址
+    if(n-left_num-1>0)//右边递归构造
+        root->rchild=CreateBitThreadTree(pre+left_num+1, in+left_num+1, n-left_num-1);//右节点=递归返回的地址
+    return root;//最后这个return root保证是返回的第一个根节点
+}
+
+void CreateInThread(ThreadTree T)
+{
+    ThreadTree preee=NULL;
+    if(T!=NULL)//如果T不是空节点
+    {
+        InThread(T, preee);
+        preee->rchild=NULL;//处理中序遍历的最后一个节点,也就是6节点
+        preee->rtag=1;
+    }
+}
+
+ThreadTree FindPostPreInOrder(ThreadTree T,ThreadTree p)
+{
+    ThreadTree q;
+    if(p->rtag==0)
+        q=p->rchild;
+    else if(p->ltag==0)
+        q=p->lchild;
+    else if(p->lchild==NULL)
+        q=NULL;
+    else
+    {
+        while(p->ltag==1&&p->lchild!=NULL)//并且不是最后一个节点
+            p=p->lchild;//顺着左线索去找祖先，找到有左孩子为止
+        if(p->ltag==0)//找到了有左孩子
+            q=p->lchild;
+        else//如果最终没找到左孩子
+            q=NULL;
+    }
+    if(q!=NULL)
+        cout<<q->data<<endl;
+    return q;
+}
+
+int WPL(BiTree T)
+{
+    return wpl_PreOrder(T, 0);
+}
+
+int wpl_PreOrder(BiTree T,int deep)//先序递归
+{
+    static int wpl=0;
+    if(T->lchild==NULL&&T->rchild==NULL)//先判断根节点是不是叶子节点
+        wpl=deep*T->data+wpl;//是的话操作
+    if(T->lchild!=NULL)
+        wpl_PreOrder(T->lchild, deep+1);//左子树递归，把deep作为传入参数
+    if(T->rchild!=NULL)
+        wpl_PreOrder(T->rchild, deep+1);//右子树
+    return wpl;
+}
+
+int wpl_InOrder(BiTree T)
+{
+    BiTree Q[maxsize];
+    int front,rear;//头尾指针
+    front=rear=0;
+    int wpl=0,deep=0;
+    BiTree lastNode=T;
+    BiTree newlastNode=NULL;
+    Q[rear++]=T;//先入队根节点
+    while(rear!=front)
+    {
+        BiTree t=Q[front++];
+        if(t->lchild==NULL&&t->rchild==NULL)
+        {
+            wpl=deep*t->data+wpl;
+        }
+        if(t->lchild!=NULL)
+        {
+            Q[rear++]=t->lchild;
+            newlastNode=t->lchild;
+        }
+        if(t->rchild!=NULL)
+        {
+            Q[rear++]=t->rchild;
+            newlastNode=t->rchild;
+        }
+        if(t==lastNode)//如果t到了这一层的最后一个节点
+        {
+            lastNode=newlastNode;//把最后一个节点更新为下一层的最后一个节点
+            deep++;
+        }
+    }
+    cout<<wpl<<endl;
+    return wpl;
+}
+
+void charTreeToEqual (charBTree *T)
+{
+    charTreetoExp(T, 1);
+}
+void charTreetoExp (charBTree *T,int deep)
+{
+    if(T==NULL)return;
+    else if(T->left==NULL&&T->right==NULL)//叶节点直接输出
+        cout<<T->data;
+    else
+    {
+        if(deep>1)cout<<"(";//遍历左子树前加括号
+        charTreetoExp(T->left, deep+1);
+        cout<<T->data;
+        charTreetoExp(T->right, deep+1);
+        if(deep>1)cout<<")";//遍历完右子树后加括号
+    }
+}
